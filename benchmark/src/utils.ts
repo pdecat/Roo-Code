@@ -9,8 +9,10 @@ export const waitFor = (condition: () => boolean, { timeout = 10_000, interval =
 			const check = () => (condition() ? resolve() : setTimeout(check, interval))
 			check()
 		}),
-		new Promise((_, reject) => setTimeout(() => {
-			console.log(`Timeout after ${Math.floor(timeout / 1000)}s`)
-			reject(new Error(`Timeout after ${Math.floor(timeout / 1000)}s`))
-		}, timeout)),
+		new Promise((_, reject) =>
+			setTimeout(() => {
+				console.log(`Timeout after ${Math.floor(timeout / 1000)}s`)
+				reject(new Error(`Timeout after ${Math.floor(timeout / 1000)}s`))
+			}, timeout),
+		),
 	])

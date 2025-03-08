@@ -14,9 +14,9 @@ async function main() {
 		})
 		.help().argv
 
-	const extensionDevelopmentPath = path.resolve(__dirname, "../../../")
+	const extensionDevelopmentPath = path.resolve(__dirname, "../../")
 	const extensionTestsPath = path.resolve(__dirname, "./runExercise")
-	const testWorkspace = path.resolve(__dirname, "..", argv.exercise)
+	const testWorkspace = path.resolve(__dirname, argv.exercise)
 
 	await runTests({
 		extensionDevelopmentPath: extensionDevelopmentPath,

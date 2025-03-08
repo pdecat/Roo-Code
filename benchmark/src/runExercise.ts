@@ -1,6 +1,6 @@
 import * as vscode from "vscode"
 
-import { ClineAPI } from "../../../src/exports/cline"
+import { ClineAPI } from "../../src/exports/cline"
 
 import { waitFor } from "./utils"
 
