@@ -1,42 +1,56 @@
+# docker -f benchmark/Dockerfile build -t roo-code-benchmark .
+# docker run -d -p 2222:22 -it roo-code-benchmark
 
-# docker build -f benchmark/Dockerfile -t roo-code-benchmark .
+FROM ubuntu:latest
 
-FROM debian:bullseye-slim
+# Install dependencies
+RUN apt update && apt install -y curl git
 
-RUN apt-get update && \
-    apt-get install -y \
-    apt-transport-https \
-    ca-certificates \
-    curl \
-    gnupg \
-    --no-install-recommendsRUN curl -sSL https://packages.microsoft.com/keys/microsoft.asc | gpg --dearmor  | apt-key add -                                                                                          RUN echo "deb [arch=amd64] https://packages.microsoft.com/repos/vscode stable ma                                                                                                             in" > /etc/apt/sources.list.d/vscode.listRUN apt-get update && apt-get -y install \
-    code git \
-    libasound2 \
-    libatk1.0-0 \
-    libcairo2 \
-    libcups2 \
-    libexpat1 \
-    libfontconfig1 \
-    libfreetype6 \
-    libgtk2.0-0 \
-    libpango-1.0-0 \
-    libx11-xcb1 \
-    libxcomposite1 \
-    libxcursor1 \
-    libxdamage1 \
-    libxext6 \
-    libxfixes3 \
-    libxi6 \
-    libxrandr2 \
-    libxrender1 \
-    libxss1 \
-    libxtst6 \
-    libxshmfence-dev\
-    openssh-client \
-    --no-install-recommends && \
-    rm -rf /var/lib/apt/lists/*
+# Install VS Code
+# https://code.visualstudio.com/docs/setup/linux
+RUN apt update && apt install -y wget gpg apt-transport-https
+RUN wget -qO- https://packages.microsoft.com/keys/microsoft.asc | gpg --dearmor > packages.microsoft.gpg
+RUN install -D -o root -g root -m 644 packages.microsoft.gpg /etc/apt/keyrings/packages.microsoft.gpg
+RUN echo "deb [arch=amd64,arm64,armhf signed-by=/etc/apt/keyrings/packages.microsoft.gpg] https://packages.microsoft.com/repos/code stable main" | tee /etc/apt/sources.list.d/vscode.list > /dev/null
+RUN rm -f packages.microsoft.gpg
+RUN apt update && apt install -y code
 
-CMD [ "/usr/bin/code", "--verbose" ]
+# Install Xvfb
+RUN apt install -y xvfb
+
+# Install SSH server
+RUN apt install -y openssh-server
+RUN mkdir -p /var/run/sshd && \
+    echo 'PermitRootLogin no' >> /etc/ssh/sshd_config && \
+    echo 'PasswordAuthentication yes' >> /etc/ssh/sshd_config
+RUN ssh-keygen -A
+
+# Install node.js
+RUN curl -sL https://deb.nodesource.com/setup_18.x | bash -
+RUN apt update && apt install -y nodejs
+
+# Create a `vscode` user
+RUN apt install -y sudo && \
+    useradd -m vscode -s /bin/bash && \
+    echo "vscode ALL=(ALL) NOPASSWD:ALL" > /etc/sudoers.d/vscode && \
+    chmod 0440 /etc/sudoers.d/vscode
+
+WORKDIR /home/vscode
+USER vscode
+
+RUN mkdir -p /home/vscode/.ssh
+RUN echo "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQDKGzg3BQ0QHU4m6G6CAdQ57LnBVljlPWfdySrsjV3twQaOYoJ8eEy1ck7kYZfH7DIbCteH4hkNIk32ghjWE84j3unO2/3wGC+CId9raZMudi8UbNgAFMYZZqTcrWR1lCxSLpDNT01JHYHw4BCMkJ4XjH2so+b5t/OzKVqvLJHOVTE7aZARsqrdQdiAmd9bbArFIoaLnvHYvArPprLU9clfhQJrAXi484t4eK2h2lMtiitmHph9WpcTxYiDdEg4fxlA2yYDkQZGcjoNPFTBEP5RpmXMcNV7/Zb2U0rJIOPrFqIwZ5yG79Kic8ajPdtmGdVpYec/OlR1Oer0kfakU2RImTzJPZeGnXy/hvcQErAqgpzTLn7dz2YaWMYdcLm6HOmZl1nj3LauWmRcCB8cxM34GjFXMpNm+6Ey8pmgoCMGLdBjL5/xqT6PbQxbYgUJNXMc51qMX8C3lkX/muQD8pDaj5kLXJhYkCgVGwcoC+hbJAOYSry4NQ8aTsFmjyTkaTE= cte@monstera" > /home/vscode/.ssh/authorized_keys
+RUN chown -R vscode:vscode /home/vscode/.ssh
+RUN chmod 700 /home/vscode/.ssh
+RUN chmod 600 /home/vscode/.ssh/authorized_keys
+
+COPY benchmark/entrypoint.sh /usr/local/bin/
+COPY --chown=vscode:vscode . /home/vscode/repo
+
+RUN cd repo && npm run install:all
+
+ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
+CMD ["/bin/bash"]
 
 # FROM buildpack-deps:jammy
 
