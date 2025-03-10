@@ -1,8 +1,6 @@
 # Roo Code Changelog
 
-## 3.8.5
-
-### Patch Changes
+## [3.8.5]
 
 - App tab layout fixes
 
