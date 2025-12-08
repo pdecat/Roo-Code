@@ -886,6 +886,7 @@ describe("ClineProvider", () => {
 			activateProfile: vi.fn().mockResolvedValue(profile),
 			setModeConfig: vi.fn(),
 			getProfile: vi.fn().mockResolvedValue(profile),
+			getModeApiConfigs: vi.fn().mockResolvedValue({}),
 		} as any
 
 		// Switch to architect mode
@@ -907,6 +908,7 @@ describe("ClineProvider", () => {
 				.fn()
 				.mockResolvedValue([{ name: "current-config", id: "current-id", apiProvider: "anthropic" }]),
 			setModeConfig: vi.fn(),
+			getModeApiConfigs: vi.fn().mockResolvedValue({}),
 		} as any
 
 		provider.setValue("currentApiConfigName", "current-config")
@@ -929,6 +931,7 @@ describe("ClineProvider", () => {
 			listConfig: vi.fn().mockResolvedValue([profile]),
 			setModeConfig: vi.fn(),
 			getModeConfigId: vi.fn().mockResolvedValue(undefined),
+			getModeApiConfigs: vi.fn().mockResolvedValue({}),
 		} as any
 
 		// First set the mode
@@ -956,6 +959,7 @@ describe("ClineProvider", () => {
 			listConfig: vi.fn().mockResolvedValue([profile]),
 			setModeConfig: vi.fn(),
 			getModeConfigId: vi.fn().mockResolvedValue(undefined),
+			getModeApiConfigs: vi.fn().mockResolvedValue({}),
 		} as any
 
 		// First set the mode
@@ -1125,6 +1129,7 @@ describe("ClineProvider", () => {
 			listConfig: vi.fn().mockResolvedValue([{ name: "test-config", id: "test-id", apiProvider: "anthropic" }]),
 			saveConfig: vi.fn().mockResolvedValue("test-id"),
 			setModeConfig: vi.fn(),
+			getModeApiConfigs: vi.fn().mockResolvedValue({}),
 		} as any
 
 		// Update API configuration
@@ -1473,6 +1478,7 @@ describe("ClineProvider", () => {
 				activateProfile: vi.fn().mockResolvedValue(profile),
 				setModeConfig: vi.fn(),
 				getProfile: vi.fn().mockResolvedValue(profile),
+				getModeApiConfigs: vi.fn().mockResolvedValue({}),
 			} as any
 
 			// Switch to architect mode
@@ -1497,6 +1503,7 @@ describe("ClineProvider", () => {
 					.fn()
 					.mockResolvedValue([{ name: "current-config", id: "current-id", apiProvider: "anthropic" }]),
 				setModeConfig: vi.fn(),
+				getModeApiConfigs: vi.fn().mockResolvedValue({}),
 			} as any
 
 			// Mock the ContextProxy's getValue method to return the current config name
@@ -1554,6 +1561,7 @@ describe("ClineProvider", () => {
 			;(provider as any).providerSettingsManager = {
 				getModeConfigId: vi.fn().mockResolvedValue(undefined),
 				listConfig: vi.fn().mockResolvedValue([]),
+				getModeApiConfigs: vi.fn().mockResolvedValue({}),
 			}
 
 			// Spy on log method to verify warning was logged
@@ -1623,6 +1631,7 @@ describe("ClineProvider", () => {
 				activateProfile: vi
 					.fn()
 					.mockResolvedValue({ name: "test-config", id: "config-id", apiProvider: "anthropic" }),
+				getModeApiConfigs: vi.fn().mockResolvedValue({}),
 			}
 
 			// Spy on log method to verify no warning was logged
@@ -1678,6 +1687,7 @@ describe("ClineProvider", () => {
 			;(provider as any).providerSettingsManager = {
 				getModeConfigId: vi.fn().mockResolvedValue(undefined),
 				listConfig: vi.fn().mockResolvedValue([]),
+				getModeApiConfigs: vi.fn().mockResolvedValue({}),
 			}
 
 			// Create history item with built-in mode
@@ -1709,6 +1719,7 @@ describe("ClineProvider", () => {
 			;(provider as any).providerSettingsManager = {
 				getModeConfigId: vi.fn().mockResolvedValue(undefined),
 				listConfig: vi.fn().mockResolvedValue([]),
+				getModeApiConfigs: vi.fn().mockResolvedValue({}),
 			}
 
 			// Create history item without mode
@@ -1756,6 +1767,7 @@ describe("ClineProvider", () => {
 					.fn()
 					.mockResolvedValue([{ name: "test-config", id: "config-id", apiProvider: "anthropic" }]),
 				activateProfile: vi.fn().mockRejectedValue(new Error("Failed to load config")),
+				getModeApiConfigs: vi.fn().mockResolvedValue({}),
 			}
 
 			// Spy on log method
@@ -1855,6 +1867,7 @@ describe("ClineProvider", () => {
 				listConfig: vi
 					.fn()
 					.mockResolvedValue([{ name: "test-config", id: "test-id", apiProvider: "anthropic" }]),
+				getModeApiConfigs: vi.fn().mockResolvedValue({}),
 			} as any
 
 			// Mock getState to provide necessary data
@@ -1887,6 +1900,7 @@ describe("ClineProvider", () => {
 				listConfig: vi
 					.fn()
 					.mockResolvedValue([{ name: "test-config", id: "test-id", apiProvider: "anthropic" }]),
+				getModeApiConfigs: vi.fn().mockResolvedValue({}),
 			} as any
 
 			const testApiConfig = {
@@ -1930,6 +1944,7 @@ describe("ClineProvider", () => {
 				listConfig: vi
 					.fn()
 					.mockResolvedValue([{ name: "test-config", id: "test-id", apiProvider: "anthropic" }]),
+				getModeApiConfigs: vi.fn().mockResolvedValue({}),
 			} as any
 
 			// Setup Task instance with auto-mock from the top of the file
@@ -1971,6 +1986,7 @@ describe("ClineProvider", () => {
 				listConfig: vi
 					.fn()
 					.mockResolvedValue([{ name: "test-config", id: "test-id", apiProvider: "anthropic" }]),
+				getModeApiConfigs: vi.fn().mockResolvedValue({}),
 			} as any
 
 			const testApiConfig = {
