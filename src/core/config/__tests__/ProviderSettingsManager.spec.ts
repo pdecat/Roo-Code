@@ -1294,4 +1294,53 @@ describe("ProviderSettingsManager", () => {
 			expect(result.activeProfileId).toBe("local-id")
 		})
 	})
+
+	describe("getModeApiConfigs", () => {
+		it("should return all mode API configs", async () => {
+			const existingConfig: ProviderProfiles = {
+				currentApiConfigName: "default",
+				apiConfigs: {
+					default: { id: "default-id" },
+					"code-config": { id: "code-id", apiProvider: "anthropic" as const },
+					"architect-config": { id: "architect-id", apiProvider: "openai" as const },
+				},
+				modeApiConfigs: {
+					code: "code-id",
+					architect: "architect-id",
+					ask: "default-id",
+				},
+			}
+
+			mockSecrets.get.mockResolvedValue(JSON.stringify(existingConfig))
+
+			const result = await providerSettingsManager.getModeApiConfigs()
+
+			expect(result).toEqual({
+				code: "code-id",
+				architect: "architect-id",
+				ask: "default-id",
+			})
+		})
+
+		it("should return empty object when no mode configs exist", async () => {
+			const existingConfig: ProviderProfiles = {
+				currentApiConfigName: "default",
+				apiConfigs: {
+					default: { id: "default-id" },
+				},
+			}
+
+			mockSecrets.get.mockResolvedValue(JSON.stringify(existingConfig))
+
+			const result = await providerSettingsManager.getModeApiConfigs()
+
+			expect(result).toEqual({})
+		})
+
+		it("should throw error if secrets storage fails", async () => {
+			mockSecrets.get.mockRejectedValue(new Error("Storage failed"))
+
+			await expect(providerSettingsManager.getModeApiConfigs()).rejects.toThrow("Failed to get mode API configs")
+		})
+	})
 })
