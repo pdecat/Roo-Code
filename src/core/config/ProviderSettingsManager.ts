@@ -521,6 +521,20 @@ export class ProviderSettingsManager {
 		}
 	}
 
+	/**
+	 * Get all mode API configs.
+	 */
+	public async getModeApiConfigs(): Promise<Record<string, string>> {
+		try {
+			return await this.lock(async () => {
+				const { modeApiConfigs } = await this.load()
+				return modeApiConfigs ?? {}
+			})
+		} catch (error) {
+			throw new Error(`Failed to get mode API configs: ${error}`)
+		}
+	}
+
 	public async export() {
 		try {
 			return await this.lock(async () => {

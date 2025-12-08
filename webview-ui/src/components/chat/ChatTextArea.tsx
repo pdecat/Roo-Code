@@ -85,6 +85,7 @@ export const ChatTextArea = forwardRef<HTMLTextAreaElement, ChatTextAreaProps>(
 			openedTabs,
 			currentApiConfigName,
 			listApiConfigMeta,
+			modeApiConfigs,
 			customModes,
 			customModePrompts,
 			cwd,
@@ -1251,6 +1252,8 @@ export const ChatTextArea = forwardRef<HTMLTextAreaElement, ChatTextAreaProps>(
 							modeShortcutText={modeShortcutText}
 							customModes={customModes}
 							customModePrompts={customModePrompts}
+							modeApiConfigs={modeApiConfigs}
+							listApiConfigMeta={listApiConfigMeta}
 						/>
 						<ApiConfigSelector
 							value={currentConfigId}

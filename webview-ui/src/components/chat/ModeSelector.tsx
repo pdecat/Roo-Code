@@ -2,7 +2,12 @@ import React from "react"
 import { Fzf } from "fzf"
 import { Check, X } from "lucide-react"
 
-import { type ModeConfig, type CustomModePrompts, TelemetryEventName } from "@roo-code/types"
+import {
+	type ModeConfig,
+	type CustomModePrompts,
+	type ProviderSettingsEntry,
+	TelemetryEventName,
+} from "@roo-code/types"
 
 import { type Mode, getAllModes } from "@roo/modes"
 
@@ -28,6 +33,8 @@ interface ModeSelectorProps {
 	customModes?: ModeConfig[]
 	customModePrompts?: CustomModePrompts
 	disableSearch?: boolean
+	modeApiConfigs?: Record<string, string>
+	listApiConfigMeta?: ProviderSettingsEntry[]
 }
 
 export const ModeSelector = ({
@@ -40,6 +47,8 @@ export const ModeSelector = ({
 	customModes,
 	customModePrompts,
 	disableSearch = false,
+	modeApiConfigs,
+	listApiConfigMeta,
 }: ModeSelectorProps) => {
 	const [open, setOpen] = React.useState(false)
 	const [searchValue, setSearchValue] = React.useState("")
@@ -49,6 +58,29 @@ export const ModeSelector = ({
 	const portalContainer = useRooPortal("roo-portal")
 	const { hasOpenedModeSelector, setHasOpenedModeSelector } = useExtensionState()
 	const { t } = useAppTranslation()
+
+	// Helper function to get the configuration profile name for a mode
+	const getConfigNameForMode = React.useCallback(
+		(modeSlug: string): string | undefined => {
+			if (!modeApiConfigs || !listApiConfigMeta) {
+				return undefined
+			}
+
+			const configId = modeApiConfigs[modeSlug]
+			if (!configId) {
+				return undefined
+			}
+
+			const config = listApiConfigMeta.find((c) => c.id === configId)
+			if (!config) {
+				return undefined
+			}
+
+			// Return the configuration profile name
+			return config.name
+		},
+		[modeApiConfigs, listApiConfigMeta],
+	)
 
 	const trackModeSelectorOpened = React.useCallback(() => {
 		// Track telemetry every time the mode selector is opened.
@@ -255,6 +287,7 @@ export const ModeSelector = ({
 							<div className="py-1">
 								{filteredModes.map((mode) => {
 									const isSelected = mode.slug === value
+									const configName = getConfigNameForMode(mode.slug)
 									return (
 										<div
 											key={mode.slug}
@@ -269,7 +302,16 @@ export const ModeSelector = ({
 											)}
 											data-testid="mode-selector-item">
 											<div className="flex-1 min-w-0">
-												<div className="font-bold truncate">{mode.name}</div>
+												<div className="flex items-center gap-2">
+													<span className="font-bold truncate">{mode.name}</span>
+													{configName && (
+														<span
+															className="text-xs text-vscode-descriptionForeground truncate opacity-70"
+															data-testid="mode-config-name">
+															{configName}
+														</span>
+													)}
+												</div>
 												{mode.description && (
 													<div className="text-xs text-vscode-descriptionForeground truncate">
 														{mode.description}
