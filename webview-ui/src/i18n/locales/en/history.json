@@ -33,6 +33,10 @@
 		"current": "Current",
 		"all": "All"
 	},
+	"mode": {
+		"prefix": "Mode:",
+		"all": "All"
+	},
 	"sort": {
 		"prefix": "Sort:",
 		"newest": "Newest",

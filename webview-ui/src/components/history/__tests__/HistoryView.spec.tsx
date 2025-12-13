@@ -22,6 +22,7 @@ const mockTaskHistory = [
 		tokensOut: 50,
 		totalCost: 0.002,
 		workspace: "/test/workspace",
+		mode: "code",
 	},
 	{
 		id: "2",
@@ -31,6 +32,7 @@ const mockTaskHistory = [
 		tokensOut: 100,
 		totalCost: 0.003,
 		workspace: "/test/workspace",
+		mode: "architect",
 	},
 ]
 
@@ -61,5 +63,14 @@ describe("HistoryView", () => {
 		fireEvent.click(doneButton)
 
 		expect(onDone).toHaveBeenCalled()
+	})
+
+	it("renders the mode filter dropdown", () => {
+		const onDone = vi.fn()
+		render(<HistoryView onDone={onDone} />)
+
+		// Check that the mode filter trigger is present
+		const modeFilterTrigger = screen.getByTestId("mode-filter-trigger")
+		expect(modeFilterTrigger).toBeInTheDocument()
 	})
 })
