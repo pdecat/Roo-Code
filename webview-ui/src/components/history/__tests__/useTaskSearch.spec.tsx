@@ -26,6 +26,7 @@ const mockTaskHistory: HistoryItem[] = [
 		tokensOut: 50,
 		totalCost: 0.01,
 		workspace: "/workspace/project1",
+		mode: "code",
 	},
 	{
 		id: "task-2",
@@ -38,6 +39,7 @@ const mockTaskHistory: HistoryItem[] = [
 		cacheWrites: 25,
 		cacheReads: 10,
 		workspace: "/workspace/project1",
+		mode: "architect",
 	},
 	{
 		id: "task-3",
@@ -48,6 +50,7 @@ const mockTaskHistory: HistoryItem[] = [
 		tokensOut: 75,
 		totalCost: 0.05,
 		workspace: "/workspace/project2",
+		mode: "code",
 	},
 ]
 
@@ -283,5 +286,116 @@ describe("useTaskSearch", () => {
 		// When searching, mostRelevant should preserve fzf order
 		// When not searching, it should fall back to newest
 		expect(result.current.sortOption).toBe("mostRelevant")
+	})
+
+	describe("mode filtering", () => {
+		it("returns all modes by default (modeFilter = 'all')", () => {
+			const { result } = renderHook(() => useTaskSearch())
+
+			expect(result.current.modeFilter).toBe("all")
+			expect(result.current.tasks).toHaveLength(2) // Only tasks from current workspace
+		})
+
+		it("filters tasks by mode when modeFilter is set", () => {
+			const { result } = renderHook(() => useTaskSearch())
+
+			act(() => {
+				result.current.setShowAllWorkspaces(true)
+				result.current.setModeFilter("code")
+			})
+
+			expect(result.current.tasks).toHaveLength(2)
+			expect(result.current.tasks.every((task) => task.mode === "code")).toBe(true)
+		})
+
+		it("filters tasks by architect mode", () => {
+			const { result } = renderHook(() => useTaskSearch())
+
+			act(() => {
+				result.current.setShowAllWorkspaces(true)
+				result.current.setModeFilter("architect")
+			})
+
+			expect(result.current.tasks).toHaveLength(1)
+			expect(result.current.tasks[0].id).toBe("task-2")
+			expect(result.current.tasks[0].mode).toBe("architect")
+		})
+
+		it("returns available modes from task history", () => {
+			const { result } = renderHook(() => useTaskSearch())
+
+			expect(result.current.availableModes).toEqual(["architect", "code"])
+		})
+
+		it("returns empty available modes when no tasks have modes", () => {
+			const tasksWithoutModes: HistoryItem[] = [
+				{
+					id: "task-no-mode",
+					number: 1,
+					task: "Task without mode",
+					ts: Date.now(),
+					tokensIn: 100,
+					tokensOut: 50,
+					totalCost: 0.01,
+					workspace: "/workspace/project1",
+				},
+			]
+
+			mockUseExtensionState.mockReturnValue({
+				taskHistory: tasksWithoutModes,
+				cwd: "/workspace/project1",
+			} as any)
+
+			const { result } = renderHook(() => useTaskSearch())
+
+			expect(result.current.availableModes).toEqual([])
+		})
+
+		it("combines mode filter with workspace filter", () => {
+			const { result } = renderHook(() => useTaskSearch())
+
+			// Default: current workspace only
+			act(() => {
+				result.current.setModeFilter("code")
+			})
+
+			// Should only show code tasks from current workspace
+			expect(result.current.tasks).toHaveLength(1)
+			expect(result.current.tasks[0].id).toBe("task-1")
+
+			// Now show all workspaces
+			act(() => {
+				result.current.setShowAllWorkspaces(true)
+			})
+
+			// Should show all code tasks from all workspaces
+			expect(result.current.tasks).toHaveLength(2)
+			expect(result.current.tasks.every((task) => task.mode === "code")).toBe(true)
+		})
+
+		it("combines mode filter with search query", () => {
+			const { result } = renderHook(() => useTaskSearch())
+
+			act(() => {
+				result.current.setShowAllWorkspaces(true)
+				result.current.setModeFilter("code")
+				result.current.setSearchQuery("React")
+			})
+
+			expect(result.current.tasks).toHaveLength(1)
+			expect(result.current.tasks[0].id).toBe("task-1")
+			expect(result.current.tasks[0].mode).toBe("code")
+		})
+
+		it("returns no tasks when mode filter matches no tasks", () => {
+			const { result } = renderHook(() => useTaskSearch())
+
+			act(() => {
+				result.current.setShowAllWorkspaces(true)
+				result.current.setModeFilter("nonexistent-mode")
+			})
+
+			expect(result.current.tasks).toHaveLength(0)
+		})
 	})
 })

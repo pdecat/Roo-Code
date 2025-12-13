@@ -12,6 +12,7 @@ export const useTaskSearch = () => {
 	const [sortOption, setSortOption] = useState<SortOption>("newest")
 	const [lastNonRelevantSort, setLastNonRelevantSort] = useState<SortOption | null>("newest")
 	const [showAllWorkspaces, setShowAllWorkspaces] = useState(false)
+	const [modeFilter, setModeFilter] = useState<string>("all")
 
 	useEffect(() => {
 		if (searchQuery && sortOption !== "mostRelevant" && !lastNonRelevantSort) {
@@ -23,13 +24,28 @@ export const useTaskSearch = () => {
 		}
 	}, [searchQuery, sortOption, lastNonRelevantSort])
 
+	// Get unique modes from task history for the filter dropdown
+	const availableModes = useMemo(() => {
+		const modes = new Set<string>()
+		taskHistory.forEach((item) => {
+			if (item.mode) {
+				modes.add(item.mode)
+			}
+		})
+		return Array.from(modes).sort()
+	}, [taskHistory])
+
 	const presentableTasks = useMemo(() => {
 		let tasks = taskHistory.filter((item) => item.ts && item.task)
 		if (!showAllWorkspaces) {
 			tasks = tasks.filter((item) => item.workspace === cwd)
 		}
+		// Filter by mode if a specific mode is selected
+		if (modeFilter !== "all") {
+			tasks = tasks.filter((item) => item.mode === modeFilter)
+		}
 		return tasks
-	}, [taskHistory, showAllWorkspaces, cwd])
+	}, [taskHistory, showAllWorkspaces, cwd, modeFilter])
 
 	const fzf = useMemo(() => {
 		return new Fzf(presentableTasks, {
@@ -88,5 +104,8 @@ export const useTaskSearch = () => {
 		setLastNonRelevantSort,
 		showAllWorkspaces,
 		setShowAllWorkspaces,
+		modeFilter,
+		setModeFilter,
+		availableModes,
 	}
 }

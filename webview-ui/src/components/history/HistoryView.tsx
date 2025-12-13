@@ -37,6 +37,9 @@ const HistoryView = ({ onDone }: HistoryViewProps) => {
 		setLastNonRelevantSort,
 		showAllWorkspaces,
 		setShowAllWorkspaces,
+		modeFilter,
+		setModeFilter,
+		availableModes,
 	} = useTaskSearch()
 	const { t } = useAppTranslation()
 
@@ -127,11 +130,11 @@ const HistoryView = ({ onDone }: HistoryViewProps) => {
 							/>
 						)}
 					</VSCodeTextField>
-					<div className="flex gap-2">
+					<div className="flex gap-2 flex-wrap">
 						<Select
 							value={showAllWorkspaces ? "all" : "current"}
 							onValueChange={(value) => setShowAllWorkspaces(value === "all")}>
-							<SelectTrigger className="flex-1">
+							<SelectTrigger className="flex-1 min-w-[120px]">
 								<SelectValue>
 									{t("history:workspace.prefix")}{" "}
 									{t(`history:workspace.${showAllWorkspaces ? "all" : "current"}`)}
@@ -152,8 +155,32 @@ const HistoryView = ({ onDone }: HistoryViewProps) => {
 								</SelectItem>
 							</SelectContent>
 						</Select>
+						<Select value={modeFilter} onValueChange={setModeFilter}>
+							<SelectTrigger className="flex-1 min-w-[120px]" data-testid="mode-filter-trigger">
+								<SelectValue>
+									{t("history:mode.prefix")}{" "}
+									{modeFilter === "all" ? t("history:mode.all") : modeFilter}
+								</SelectValue>
+							</SelectTrigger>
+							<SelectContent>
+								<SelectItem value="all" data-testid="mode-filter-all">
+									<div className="flex items-center gap-2">
+										<span className="codicon codicon-layers" />
+										{t("history:mode.all")}
+									</div>
+								</SelectItem>
+								{availableModes.map((mode) => (
+									<SelectItem key={mode} value={mode} data-testid={`mode-filter-${mode}`}>
+										<div className="flex items-center gap-2">
+											<span className="codicon codicon-symbol-method" />
+											{mode}
+										</div>
+									</SelectItem>
+								))}
+							</SelectContent>
+						</Select>
 						<Select value={sortOption} onValueChange={(value) => setSortOption(value as SortOption)}>
-							<SelectTrigger className="flex-1">
+							<SelectTrigger className="flex-1 min-w-[120px]">
 								<SelectValue>
 									{t("history:sort.prefix")} {t(`history:sort.${sortOption}`)}
 								</SelectValue>
