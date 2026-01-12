@@ -12,7 +12,6 @@ import React, {
 import {
 	CheckCheck,
 	SquareMousePointer,
-	Webhook,
 	GitBranch,
 	Bell,
 	Database,
@@ -28,6 +27,7 @@ import {
 	Plug,
 	Server,
 	Users2,
+	ArrowLeft,
 } from "lucide-react"
 
 import {
@@ -588,18 +588,33 @@ const SettingsView = forwardRef<SettingsViewRef, SettingsViewProps>(({ onDone, t
 	const initialTab = useRef<SectionName>(activeTab)
 	const isIndexing = indexingTabIndex < sectionNames.length
 	const isIndexingComplete = !isIndexing
+	const tabTitlesRegistered = useRef(false)
 
 	// Index all tabs by cycling through them on mount
 	useLayoutEffect(() => {
 		if (indexingTabIndex >= sectionNames.length) {
-			// All tabs indexed, return to initial tab
-			setActiveTab(initialTab.current)
+			// All tabs indexed, now register tab titles as searchable items
+			if (!tabTitlesRegistered.current && searchContextValue) {
+				sections.forEach(({ id }) => {
+					const tabTitle = t(`settings:sections.${id}`)
+					// Register each tab title as a searchable item
+					// Using a special naming convention for tab titles: "tab-{sectionName}"
+					searchContextValue.registerSetting({
+						settingId: `tab-${id}`,
+						section: id,
+						label: tabTitle,
+					})
+				})
+				tabTitlesRegistered.current = true
+				// Return to initial tab
+				setActiveTab(initialTab.current)
+			}
 			return
 		}
 
 		// Move to the next tab on next render
 		setIndexingTabIndex((prev) => prev + 1)
-	}, [indexingTabIndex])
+	}, [indexingTabIndex, searchContextValue, sections, t])
 
 	// Determine which tab content to render (for indexing or active display)
 	const renderTab = isIndexing ? sectionNames[indexingTabIndex] : activeTab
@@ -632,8 +647,16 @@ const SettingsView = forwardRef<SettingsViewRef, SettingsViewProps>(({ onDone, t
 	return (
 		<Tab>
 			<TabHeader className="flex justify-between items-center gap-2">
-				<h3 className="text-vscode-foreground m-0 flex-shrink-0">{t("settings:header.title")}</h3>
-				<div className="flex items-center gap-2">
+				<div className="flex items-center gap-2 grow">
+					<StandardTooltip content={t("settings:header.doneButtonTooltip")}>
+						<Button variant="ghost" className="px-1.5 -ml-2" onClick={() => checkUnsaveChanges(onDone)}>
+							<ArrowLeft />
+							<span className="sr-only">{t("settings:common.done")}</span>
+						</Button>
+					</StandardTooltip>
+					<h3 className="text-vscode-foreground m-0 flex-shrink-0">{t("settings:header.title")}</h3>
+				</div>
+				<div className="flex items-center gap-2 shrink-0">
 					{isIndexingComplete && (
 						<SettingsSearch index={searchIndex} onNavigate={handleSearchNavigate} sections={sections} />
 					)}
@@ -652,11 +675,6 @@ const SettingsView = forwardRef<SettingsViewRef, SettingsViewProps>(({ onDone, t
 							disabled={!isChangeDetected || !isSettingValid}
 							data-testid="save-button">
 							{t("settings:common.save")}
-						</Button>
-					</StandardTooltip>
-					<StandardTooltip content={t("settings:header.doneButtonTooltip")}>
-						<Button variant="secondary" onClick={() => checkUnsaveChanges(onDone)}>
-							{t("settings:common.done")}
 						</Button>
 					</StandardTooltip>
 				</div>
@@ -729,12 +747,7 @@ const SettingsView = forwardRef<SettingsViewRef, SettingsViewProps>(({ onDone, t
 						{/* Providers Section */}
 						{renderTab === "providers" && (
 							<div>
-								<SectionHeader>
-									<div className="flex items-center gap-2">
-										<Webhook className="w-4" />
-										<div>{t("settings:sections.providers")}</div>
-									</div>
-								</SectionHeader>
+								<SectionHeader>{t("settings:sections.providers")}</SectionHeader>
 
 								<Section>
 									<ApiConfigManager
