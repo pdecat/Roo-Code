@@ -93,8 +93,7 @@ export class GeminiHandler extends BaseProvider implements SingleCompletionHandl
 		// Gemini 3 validates thought signatures for tool/function calling steps.
 		// We must round-trip the signature when tools are in use, even if the user chose
 		// a minimal thinking level (or thinkingConfig is otherwise absent).
-		const usingNativeTools = Boolean(metadata?.tools && metadata.tools.length > 0)
-		const includeThoughtSignatures = Boolean(thinkingConfig) || usingNativeTools
+		const includeThoughtSignatures = Boolean(thinkingConfig) || Boolean(metadata?.tools?.length)
 
 		// The message list can include provider-specific meta entries such as
 		// `{ type: "reasoning", ... }` that are intended only for providers like
@@ -129,29 +128,19 @@ export class GeminiHandler extends BaseProvider implements SingleCompletionHandl
 			.map((message) => convertAnthropicMessageToGemini(message, { includeThoughtSignatures, toolIdToName }))
 			.flat()
 
-		const tools: GenerateContentConfig["tools"] = []
-
-		// Google built-in tools (Grounding, URL Context) are currently mutually exclusive
-		// with function declarations in the Gemini API. If native function calling is
-		// used (Agent tools), we must prioritize it and skip built-in tools to avoid
-		// "Tool use with function calling is unsupported" (HTTP 400) errors.
-		if (metadata?.tools && metadata.tools.length > 0) {
-			tools.push({
-				functionDeclarations: metadata.tools.map((tool) => ({
+		// Tools are always present (minimum ALWAYS_AVAILABLE_TOOLS).
+		// Google built-in tools (Grounding, URL Context) are mutually exclusive
+		// with function declarations in the Gemini API, so we always use
+		// function declarations when tools are provided.
+		const tools: GenerateContentConfig["tools"] = [
+			{
+				functionDeclarations: (metadata?.tools ?? []).map((tool) => ({
 					name: (tool as any).function.name,
 					description: (tool as any).function.description,
 					parametersJsonSchema: (tool as any).function.parameters,
 				})),
-			})
-		} else {
-			if (this.options.enableUrlContext) {
-				tools.push({ urlContext: {} })
-			}
-
-			if (this.options.enableGrounding) {
-				tools.push({ googleSearch: {} })
-			}
-		}
+			},
+		]
 
 		// Determine temperature respecting model capabilities and defaults:
 		// - If supportsTemperature is explicitly false, ignore user overrides
@@ -172,7 +161,19 @@ export class GeminiHandler extends BaseProvider implements SingleCompletionHandl
 			...(tools.length > 0 ? { tools } : {}),
 		}
 
-		if (metadata?.tool_choice) {
+		// Handle allowedFunctionNames for mode-restricted tool access.
+		// When provided, all tool definitions are passed to the model (so it can reference
+		// historical tool calls in conversation), but only the specified tools can be invoked.
+		// This takes precedence over tool_choice to ensure mode restrictions are honored.
+		if (metadata?.allowedFunctionNames && metadata.allowedFunctionNames.length > 0) {
+			config.toolConfig = {
+				functionCallingConfig: {
+					// Use ANY mode to allow calling any of the allowed functions
+					mode: FunctionCallingConfigMode.ANY,
+					allowedFunctionNames: metadata.allowedFunctionNames,
+				},
+			}
+		} else if (metadata?.tool_choice) {
 			const choice = metadata.tool_choice
 			let mode: FunctionCallingConfigMode
 			let allowedFunctionNames: string[] | undefined

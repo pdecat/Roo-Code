@@ -94,6 +94,11 @@
 		"title": "取消",
 		"tooltip": "取消目前操作"
 	},
+	"stop": {
+		"title": "停止",
+		"tooltip": "停止目前的工作"
+	},
+	"enqueueMessage": "將訊息加入佇列（會在目前工作完成後傳送）",
 	"editMessage": {
 		"placeholder": "編輯您的訊息..."
 	},
@@ -305,7 +310,8 @@
 		"title": "錯誤詳細資訊",
 		"copyToClipboard": "複製到剪貼簿",
 		"copied": "已複製！",
-		"diagnostics": "取得詳細錯誤資訊"
+		"diagnostics": "取得詳細錯誤資訊",
+		"proxyProvider": "看起來你在使用基於代理的提供商。請檢查日誌並確保它不會重寫 Roo 的請求。"
 	},
 	"powershell": {
 		"issues": "您似乎遇到了 Windows PowerShell 的問題，請參閱此說明文件"
@@ -340,9 +346,9 @@
 		},
 		"release": {
 			"heading": "新增功能：",
-			"stickyProfiles": "固定式提供商設定檔 - 工作現在會記住其 API 設定，因此在會話中途切換設定檔不會影響正在執行的工作。",
-			"imageMentions": "圖像檔案 @mentions - 在聊天中直接使用 @mentions 引用圖像，將其包含在您的上下文中。",
-			"brrrMode": "YOLO 現在是 BRRR - 自動批准一切已從 \"YOLO\" 更名為 \"BRRR\"。顯然。"
+			"chatGptUsageLimits": "在 OpenAI Codex 提供商中新增 UI 以追蹤您的 ChatGPT 使用限制。",
+			"claudeCodeRemoved": "已移除已停用的 Claude Code 提供商。",
+			"grokCodeFastFreeEnds": "Grok Code Fast 不再免費 - 感謝 xAI 的慷慨促銷！"
 		},
 		"cloudAgents": {
 			"heading": "雲端的新功能：",
@@ -360,8 +366,14 @@
 		"copyToInput": "複製到輸入框 (或按住 Shift 並點選)",
 		"timerPrefix": "自動批准已啟用。{{seconds}}秒後選擇中…"
 	},
+	"costs": {
+		"totalWithSubtasks": "總成本（包括子任務）: ${{cost}}",
+		"total": "總成本: ${{cost}}",
+		"includesSubtasks": "包括子任務成本"
+	},
 	"browser": {
 		"session": "瀏覽器會話",
+		"active": "活動中",
 		"rooWantsToUse": "Roo 想要使用瀏覽器",
 		"consoleLogs": "主控台記錄",
 		"noNewLogs": "（沒有新記錄）",
@@ -481,5 +493,14 @@
 		"updated": "已更新待辦事項列表",
 		"completed": "已完成",
 		"started": "已開始"
+	},
+	"tooManyTools": {
+		"title": "啟用的工具過多",
+		"toolsPart_one": "{{count}} 個工具",
+		"toolsPart_other": "{{count}} 個工具",
+		"serversPart_one": "{{count}} 個 MCP 伺服器",
+		"serversPart_other": "{{count}} 個 MCP 伺服器",
+		"messageTemplate": "你已啟用 {{tools}}（透過 {{servers}}）。這麼多的工具可能會混淆模型並導致錯誤。請嘗試保持在 {{threshold}} 以下。",
+		"openMcpSettings": "開啟 MCP 設定"
 	}
 }
