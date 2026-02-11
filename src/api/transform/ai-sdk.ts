@@ -846,12 +846,26 @@ export function handleAiSdkError(error: unknown, providerName: string, options?:
 
 	// Preserve status code for retry logic
 	const anyError = error as any
-	const statusCode =
+	let statusCode =
 		anyError?.lastError?.status ||
 		anyError?.lastError?.statusCode ||
 		anyError?.status ||
 		anyError?.statusCode ||
 		undefined
+
+	// LiteLLM returns budget exceeded errors with a non-402 status code (typically 400).
+	// Remap to 402 (Payment Required) so the UI shows the appropriate
+	// "out of funds/credits" message instead of a generic error.
+	if (isBudgetExceededError(message)) {
+		statusCode = 402
+	}
+
+	// LiteLLM returns rate limit errors with a non-429 status code.
+	// Remap to 429 (Too Many Requests) so the UI shows the appropriate
+	// "rate-limited by the provider" message instead of a generic error.
+	if (isRateLimitError(message) && statusCode !== 429) {
+		statusCode = 429
+	}
 
 	if (statusCode) {
 		;(wrappedError as any).status = statusCode
@@ -861,4 +875,30 @@ export function handleAiSdkError(error: unknown, providerName: string, options?:
 	;(wrappedError as any).cause = error
 
 	return wrappedError
+}
+
+/**
+ * Detect LiteLLM budget exceeded errors.
+ *
+ * LiteLLM proxy returns messages like:
+ *   "Budget has been exceeded! Current cost: 420.46, Max budget: 420.0"
+ *
+ * These are billing/quota errors that should map to HTTP 402 (Payment Required)
+ * but LiteLLM sends them with status 400.
+ */
+export function isBudgetExceededError(message: string): boolean {
+	return /budget has been exceeded/i.test(message)
+}
+
+/**
+ * Detect LiteLLM rate limit errors.
+ *
+ * LiteLLM proxy returns messages like:
+ *   "Rate limit exceeded for api_key: ... Limit type: tokens. Current limit: 500000, Remaining: 0."
+ *
+ * These are rate limiting errors that should map to HTTP 429 (Too Many Requests)
+ * but LiteLLM may send them with a different status code.
+ */
+export function isRateLimitError(message: string): boolean {
+	return /rate limit exceeded/i.test(message)
 }

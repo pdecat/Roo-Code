@@ -9,6 +9,8 @@ import {
 	extractAiSdkErrorMessage,
 	extractMessageFromResponseBody,
 	handleAiSdkError,
+	isBudgetExceededError,
+	isRateLimitError,
 	flattenAiSdkMessagesToStringContent,
 } from "../ai-sdk"
 
@@ -1103,6 +1105,168 @@ describe("AI SDK conversion utilities", () => {
 			const result = handleAiSdkError(error, "TestProvider")
 
 			expect(result.message).toBe("TestProvider: Something broke")
+		})
+
+		it("should remap LiteLLM budget exceeded error to status 402", () => {
+			const error = {
+				name: "AI_APICallError",
+				message: "Budget has been exceeded! Current cost: 420.4644514749996, Max budget: 420.0",
+				status: 400,
+			}
+
+			const result = handleAiSdkError(error, "LiteLLM")
+
+			expect((result as any).status).toBe(402)
+			expect(result.message).toContain("Budget has been exceeded")
+		})
+
+		it("should remap budget exceeded error even when wrapped in AI_RetryError", () => {
+			const retryError = {
+				name: "AI_RetryError",
+				errors: [new Error("Budget has been exceeded")],
+				lastError: {
+					message: "Budget has been exceeded! Current cost: 100.0, Max budget: 50.0",
+					status: 400,
+				},
+			}
+
+			const result = handleAiSdkError(retryError, "LiteLLM")
+
+			expect((result as any).status).toBe(402)
+			expect(result.message).toContain("Budget has been exceeded")
+		})
+
+		it("should remap budget exceeded error from responseBody", () => {
+			const error = {
+				name: "AI_APICallError",
+				message: "API call failed",
+				responseBody:
+					'{"error":{"message":"Budget has been exceeded! Current cost: 420.46, Max budget: 420.0"}}',
+				status: 400,
+			}
+
+			const result = handleAiSdkError(error, "LiteLLM")
+
+			expect((result as any).status).toBe(402)
+			expect(result.message).toContain("Budget has been exceeded")
+		})
+
+		it("should not remap non-budget errors to 402", () => {
+			const error = {
+				name: "AI_APICallError",
+				message: "Invalid model specified",
+				status: 400,
+			}
+
+			const result = handleAiSdkError(error, "LiteLLM")
+
+			expect((result as any).status).toBe(400)
+		})
+
+		it("should remap LiteLLM rate limit error to status 429", () => {
+			const error = {
+				name: "AI_APICallError",
+				message:
+					"Rate limit exceeded for api_key: 4bbfc0121b8bcf77b9ed774bbfc443150f33c1b69fd0a803a4b788a2dc8bc57f. Limit type: tokens. Current limit: 500000, Remaining: 0.",
+				status: 400,
+			}
+
+			const result = handleAiSdkError(error, "LiteLLM")
+
+			expect((result as any).status).toBe(429)
+			expect(result.message).toContain("Rate limit exceeded")
+		})
+
+		it("should remap rate limit error even when wrapped in AI_RetryError", () => {
+			const retryError = {
+				name: "AI_RetryError",
+				errors: [new Error("Rate limit exceeded")],
+				lastError: {
+					message:
+						"Rate limit exceeded for api_key: ... Limit type: tokens. Current limit: 500000, Remaining: 0.",
+					status: 400,
+				},
+			}
+
+			const result = handleAiSdkError(retryError, "LiteLLM")
+
+			expect((result as any).status).toBe(429)
+			expect(result.message).toContain("Rate limit exceeded")
+		})
+
+		it("should not remap rate limit error if already 429", () => {
+			const error = {
+				name: "AI_APICallError",
+				message: "Rate limit exceeded",
+				status: 429,
+			}
+
+			const result = handleAiSdkError(error, "OpenAI")
+
+			// Should remain 429, not be changed
+			expect((result as any).status).toBe(429)
+		})
+	})
+
+	describe("isBudgetExceededError", () => {
+		it("should detect LiteLLM budget exceeded message", () => {
+			expect(
+				isBudgetExceededError("Budget has been exceeded! Current cost: 420.4644514749996, Max budget: 420.0"),
+			).toBe(true)
+		})
+
+		it("should be case-insensitive", () => {
+			expect(isBudgetExceededError("budget has been exceeded")).toBe(true)
+			expect(isBudgetExceededError("BUDGET HAS BEEN EXCEEDED")).toBe(true)
+		})
+
+		it("should detect budget exceeded in longer messages", () => {
+			expect(
+				isBudgetExceededError(
+					"API Error (400): Budget has been exceeded! Current cost: 100.0, Max budget: 50.0",
+				),
+			).toBe(true)
+		})
+
+		it("should return false for unrelated errors", () => {
+			expect(isBudgetExceededError("Rate limit exceeded")).toBe(false)
+			expect(isBudgetExceededError("Invalid API key")).toBe(false)
+			expect(isBudgetExceededError("Connection timeout")).toBe(false)
+		})
+
+		it("should return false for empty string", () => {
+			expect(isBudgetExceededError("")).toBe(false)
+		})
+	})
+
+	describe("isRateLimitError", () => {
+		it("should detect LiteLLM rate limit message", () => {
+			expect(
+				isRateLimitError(
+					"Rate limit exceeded for api_key: 4bbfc0121b8bcf77b9ed774bbfc443150f33c1b69fd0a803a4b788a2dc8bc57f. Limit type: tokens. Current limit: 500000, Remaining: 0. Limit resets at: 2026-02-11 19:27:25 UTC",
+				),
+			).toBe(true)
+		})
+
+		it("should be case-insensitive", () => {
+			expect(isRateLimitError("rate limit exceeded")).toBe(true)
+			expect(isRateLimitError("RATE LIMIT EXCEEDED")).toBe(true)
+		})
+
+		it("should detect rate limit in longer messages", () => {
+			expect(isRateLimitError("Failed after 3 attempts. Last error: Rate limit exceeded for api_key: ...")).toBe(
+				true,
+			)
+		})
+
+		it("should return false for unrelated errors", () => {
+			expect(isRateLimitError("Budget has been exceeded")).toBe(false)
+			expect(isRateLimitError("Invalid API key")).toBe(false)
+			expect(isRateLimitError("Connection timeout")).toBe(false)
+		})
+
+		it("should return false for empty string", () => {
+			expect(isRateLimitError("")).toBe(false)
 		})
 	})
 
